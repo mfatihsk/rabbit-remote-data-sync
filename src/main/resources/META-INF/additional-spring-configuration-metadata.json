@@ -1,0 +1,33 @@
+{
+  "properties": [
+    {
+      "name": "com.isik.sourceRabbitHttpPort",
+      "type": "java.lang.Integer",
+      "description": "local rabbit http service port."
+    },
+    {
+      "name": "com.isik.remoteRabbitIp",
+      "type": "java.lang.String",
+      "description": "remote rabbit ip address."
+    },
+    {
+      "name": "com.isik.remoteRabbitHttpPort",
+      "type": "java.lang.Integer",
+      "description": "remote rabbit http service port."
+    },
+    {
+      "name": "com.isik.remoteRabbitUserName",
+      "type": "java.lang.String",
+      "description": "remote rabbit user name."
+    },
+    {
+      "name": "com.isik.remoteRabbitPassword",
+      "type": "java.lang.String",
+      "description": "remote rabbit user password."
+    },
+    {
+      "name": "com.isik.remoteRabbitPort",
+      "type": "java.lang.Integer",
+      "description": "remote rabbit amqp service port."
+    }
+  ] }
