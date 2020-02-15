@@ -1,7 +1,6 @@
 package com.isik.config;
 
 import com.isik.api.Constants;
-import com.isik.util.RabbitMqUtil;
 import org.springframework.amqp.core.*;
 import org.springframework.amqp.rabbit.annotation.RabbitListenerConfigurer;
 import org.springframework.amqp.rabbit.config.SimpleRabbitListenerContainerFactory;
@@ -11,9 +10,9 @@ import org.springframework.amqp.rabbit.listener.RabbitListenerEndpointRegistrar;
 import org.springframework.amqp.rabbit.listener.RabbitListenerEndpointRegistry;
 import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.autoconfigure.amqp.RabbitProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Profile;
 import org.springframework.messaging.converter.MappingJackson2MessageConverter;
 import org.springframework.messaging.handler.annotation.support.DefaultMessageHandlerMethodFactory;
 
@@ -25,13 +24,8 @@ import java.util.Map;
  * @author @fisik
  */
 @Configuration
-public class RabbitConfiguration implements RabbitListenerConfigurer {
-
-    @Autowired
-    private RabbitProperties    props;
-
-    @Autowired
-    private AppProperties       appProperties;
+@Profile(Constants.CENTER)
+public class RabbitConfigurationCenter implements RabbitListenerConfigurer {
 
     @Autowired
     private AmqpAdmin           amqpAdmin;
@@ -69,39 +63,43 @@ public class RabbitConfiguration implements RabbitListenerConfigurer {
         registrar.setMessageHandlerMethodFactory(myHandlerMethodFactory());
     }
 
-
     @Bean
-    public Queue outgoingQueue() {
+    public Queue liveQueue() {
         Map<String, Object> args = new HashMap<>();
-        // The default exchange
+        // The default topic
         args.put("x-dead-letter-exchange", "");
         // Route to the dead letter queue when the TTL occurs
         args.put("x-dead-letter-routing-key", Constants.DEAD_LETTER_QUEUE);
         // TTL 10 seconds
-        args.put("x-message-ttl", 10000);
-        args.put("x-max-priority", 10);
+        args.put("x-message-ttl", 10 * 1000);
         Queue queue = QueueBuilder.nonDurable(Constants.LIVE_QUEUE).withArguments(args).build();
         amqpAdmin.declareQueue(queue);
 
-        RabbitMqUtil.createShovel(props, appProperties, queue.getName());
         return queue;
     }
 
     @Bean
-    Binding binding() {
-        return BindingBuilder.bind(outgoingQueue()).to(exchange()).with(Constants.ROUTING_KEY);
+    public Binding binding() {
+        return BindingBuilder.bind(liveQueue()).to(topic()).with(Constants.ROUTING_KEY);
     }
 
     @Bean
-    DirectExchange exchange() {
-        return new DirectExchange(Constants.EXCHANGE);
+    public TopicExchange topic() {
+        return new TopicExchange(Constants.EXCHANGE);
     }
 
+    @Bean("autoDeleteQueue")
+    public Queue autoDeleteQueue() {
+        return new AnonymousQueue();
+    }
+
+    @Bean
+    public Binding binding1a(TopicExchange topic,
+                             Queue autoDeleteQueue) {
+        return BindingBuilder.bind(autoDeleteQueue).to(topic) .with(Constants.ROUTING_KEY + ".#");
+    }
     @Bean
     public Queue deadLetterQueue() {
-        Map<String, Object> args = new HashMap<>();
-        Queue queue = QueueBuilder.durable(Constants.DEAD_LETTER_QUEUE).withArguments(args).build();
-        RabbitMqUtil.createShovel(props, appProperties, queue.getName());
-        return queue;
+        return QueueBuilder.durable(Constants.DEAD_LETTER_QUEUE).build();
     }
 }

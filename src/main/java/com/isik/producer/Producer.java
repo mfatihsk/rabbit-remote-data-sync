@@ -63,12 +63,12 @@ public class Producer {
      * send messages to live queue
      */
     public void send() {
+        dataCount++;
         Telemetry paymentOrder = new Telemetry(dataCount
                 , RANDOM.nextInt(Short.MAX_VALUE)
                 , RANDOM.nextInt(Short.MAX_VALUE), System.currentTimeMillis(), data);
         rabbitTemplate.convertAndSend(Constants.EXCHANGE, Constants.ROUTING_KEY, paymentOrder);
         LOGGER.info("Sending payload {}", paymentOrder);
-        dataCount++;
     }
 
     public long getDataCount() {

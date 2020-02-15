@@ -1,8 +1,10 @@
 package com.isik.control;
 
 
+import com.isik.api.Constants;
 import com.isik.producer.Producer;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Profile;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 
@@ -11,6 +13,7 @@ import org.springframework.web.bind.annotation.*;
  */
 @RestController
 @RequestMapping("producer")
+@Profile(Constants.EDGE)
 public class ProducerControl {
 
     @Autowired

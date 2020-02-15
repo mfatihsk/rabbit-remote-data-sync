@@ -19,6 +19,7 @@ import java.util.Arrays;
  * @author fisik
  */
 public class RabbitMqUtil {
+
     public static final String SHOVEL_PREFIX    = "shovel_";
 
     private static final Logger LOGGER          = LoggerFactory.getLogger(RabbitMqUtil.class);
@@ -27,7 +28,9 @@ public class RabbitMqUtil {
 
     private static final String HTTP_TEMPLATE   = "http://{0}/api/parameters/shovel/%2f/{1}";
 
-    private static final String SHOVEL_TEMPLATE = "{\"value\":{\"src-protocol\": \"amqp091\", \"src-uri\":  \"%s\", \"src-queue\": \"%s\", \"dest-protocol\": \"amqp091\", \"dest-uri\": \"%s\", \"dest-queue\": \"%s\" , \"src-prefetch-count\": %s}}";
+    private static final String SHOVEL_TEMPLATE_EXCHANGE = "{\"value\":{\"src-protocol\": \"amqp091\", \"src-uri\":  \"%s\", \"src-queue\": \"%s\", \"dest-protocol\": \"amqp091\", \"dest-uri\": \"%s\", \"dest-exchange\": \"%s\" , \"src-prefetch-count\": %s}}";
+
+    private static final String SHOVEL_TEMPLATE_QUEUE = "{\"value\":{\"src-protocol\": \"amqp091\", \"src-uri\":  \"%s\", \"src-queue\": \"%s\", \"dest-protocol\": \"amqp091\", \"dest-uri\": \"%s\", \"dest-queue\": \"%s\" , \"src-prefetch-count\": %s}}";
 
     private RabbitMqUtil() {
     }
@@ -39,14 +42,16 @@ public class RabbitMqUtil {
      * @param queueName
      * @return
      */
-    public static boolean createShovel(RabbitProperties props, AppProperties appProps, String queueName) {
+    public static boolean createShovel(RabbitProperties props, AppProperties appProps, String queueName, String destination, boolean isForExchange) {
 
         String localAmqpAddress = concat(props.getHost(), ":", props.getPort());
         String remoteAmqpAddress = concat(appProps.getRemoteRabbitIp(), ":", appProps.getRemoteRabbitPort());
 
         String localAmqp = getAmqpAddress(props.getUsername(), props.getPassword(), localAmqpAddress);
         String remoteAmqp = getAmqpAddress(appProps.getRemoteRabbitUserName(), appProps.getRemoteRabbitPassword(), remoteAmqpAddress);
-        String httpCommand = String.format(SHOVEL_TEMPLATE, localAmqp , queueName, remoteAmqp ,queueName, 100);
+
+        String shovelTemplate = isForExchange ? SHOVEL_TEMPLATE_EXCHANGE : SHOVEL_TEMPLATE_QUEUE;
+        String httpCommand = String.format(shovelTemplate, localAmqp , queueName, remoteAmqp ,destination, 100);
 
         String localAddress = concat(props.getHost() , ":" , appProps.getSourceRabbitHttpPort()) ;
         String shovelName = concat(SHOVEL_PREFIX, queueName);
@@ -73,7 +78,6 @@ public class RabbitMqUtil {
     private static String getAmqpAddress(String userName, String pass, String amqpAddress) {
         return String.format(AMQP_ADDRESS,userName,pass,amqpAddress);
     }
-
 
     private static String concat(Object... args) {
         StringBuilder builder = new StringBuilder();
